@@ -1,24 +1,29 @@
-import logo from './logo.svg';
 import './App.css';
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
+import { useState } from "react";
+import Home from './components/Home.jsx';
+import Navbar from './components/Navbar.jsx';
+import Sidebar from './components/Sidebar.jsx';
+import Testes from './components/Testes.jsx';
+import TesteUnitario from './components/TesteUnitario.jsx'
 
 function App() {
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => !prev);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Navbar onMenuClick={toggleSidebar} />
+      <Sidebar isOpen={isSidebarOpen} onClose={toggleSidebar} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/testes" element={<Testes />} />
+        <Route path="/teste-unitario" element={<TesteUnitario />} />
+      </Routes>
+    </Router>
   );
 }
 
