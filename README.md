@@ -26,12 +26,12 @@ Aplicação web desenvolvida pela **112H** para execução, monitoramento e gere
 
 ### Tela Principal
 
-![Tela Principal](docs/screenshots/home.png)
+![Tela Principal](/docs/screenshots/home.png)
 Interface clean com botões para iniciar testes.
 
 ### Console de Logs
 
-![Console de Logs](docs/screenshots/console.png)
+![Console de Logs](/docs/screenshots/console.png)
 Visualização detalhada do progresso e logs de execução.
 
 ---
