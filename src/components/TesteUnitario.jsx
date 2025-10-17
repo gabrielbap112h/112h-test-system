@@ -1,6 +1,5 @@
 import styled from "styled-components";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const colors = {
   darkBlue: "#1F2937",
@@ -8,92 +7,87 @@ const colors = {
   buttonHover: "#374151",
 };
 
+const matrixChars = "高貴な精神は最も小さな人をも高める";
+
 export default function TesteUnitario() {
-  const navigate = useNavigate();
   const [showConsole, setShowConsole] = useState(false);
-  const [logs, setLogs] = useState([]);
-  const [testRunning, setTestRunning] = useState(false);
-  const consoleRef = useRef();
-  const intervalRef = useRef(null);
+  const [matrixMode, setMatrixMode] = useState(false);
+  const canvasRef = useRef();
+  const animationRef = useRef();
 
-  // Iniciar teste simulado
-  const runTest = () => {
-    if (testRunning) return; // previne múltiplos intervalos
+  // Iniciar o console
+  const openConsole = (ctrl) => {
     setShowConsole(true);
-    setLogs([]);
-    setTestRunning(true);
-
-    intervalRef.current = setInterval(() => {
-      setLogs((prev) => [
-        ...prev,
-        `[${new Date().toLocaleTimeString()}] Log de teste simulado`,
-      ]);
-    }, 1000);
+    setMatrixMode(ctrl); // Ctrl+click ativa Matrix
   };
 
-  // Parar teste
-  const stopTest = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (testRunning) {
-      setTestRunning(false);
-      setLogs((prev) => [...prev, "=== Teste parado pelo usuário ==="]);
-    }
-  };
+  // Função Matrix
+  const startMatrix = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
 
-  // Scroll automático
-  useEffect(() => {
-    if (consoleRef.current) {
-      consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
-    }
-  }, [logs]);
+    const fontSize = 16;
+    const columns = Math.floor(canvas.width / fontSize);
+    const drops = Array(columns).fill(1);
 
-  // Limpar intervalo quando o componente desmonta
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+    const draw = () => {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "#0f0";
+      ctx.font = fontSize + "px monospace";
+
+      for (let i = 0; i < drops.length; i++) {
+        const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+
+        drops[i]++;
+      }
+      animationRef.current = requestAnimationFrame(draw);
     };
-  }, []);
+
+    draw();
+  };
+
+  const stopMatrix = () => {
+    cancelAnimationFrame(animationRef.current);
+  };
+
+  // Limpar animação ao fechar console
+  useEffect(() => {
+    if (showConsole && matrixMode) startMatrix();
+    return () => stopMatrix();
+  }, [showConsole, matrixMode]);
 
   return (
     <Container>
-      <Content>
-        <Title>Teste Unitário</Title>
-        <ButtonGroup>
-          <Button primary onClick={runTest}>
-            Login
-          </Button>
-          <Button primary onClick={runTest}>
-            Funcionalidade 1
-          </Button>
-          <Button primary onClick={runTest}>
-            Funcionalidade 2
-          </Button>
-        </ButtonGroup>
-      </Content>
+      <ButtonGroup>
+        <Button onClick={(e) => openConsole(e.ctrlKey)}>Login</Button>
+        <Button onClick={(e) => openConsole(e.ctrlKey)}>Funcionalidade 1</Button>
+        <Button onClick={(e) => openConsole(e.ctrlKey)}>Funcionalidade 2</Button>
+      </ButtonGroup>
 
       {showConsole && (
         <ConsoleContainer>
           <ConsoleHeader>
-            <HeaderTitle>Console de Logs</HeaderTitle>
-            <HeaderButtons>
-              {testRunning && <StopButton onClick={stopTest}>Parar Teste</StopButton>}
-              <CloseButton
-                onClick={() => {
-                  stopTest(); // garante que o teste pare
-                  setShowConsole(false); // fecha o console
-                }}
-              >
-                X
-              </CloseButton>
-            </HeaderButtons>
+            <HeaderTitle>Console</HeaderTitle>
+            <CloseButton
+              onClick={() => {
+                setShowConsole(false);
+                stopMatrix();
+              }}
+            >
+              X
+            </CloseButton>
           </ConsoleHeader>
-          <ConsoleBody ref={consoleRef}>
-            {logs.map((log, idx) => (
-              <LogLine key={idx}>{log}</LogLine>
-            ))}
+          <ConsoleBody>
+            {matrixMode ? <MatrixCanvas ref={canvasRef} /> : <p>Logs aqui...</p>}
           </ConsoleBody>
         </ConsoleContainer>
       )}
@@ -101,121 +95,66 @@ export default function TesteUnitario() {
   );
 }
 
-/* =================== Styled Components =================== */
+/* Styled Components */
 
 const Container = styled.div`
   height: 100vh;
   background-color: ${colors.darkBlue};
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-`;
-
-const Content = styled.div`
-  text-align: center;
-`;
-
-const Title = styled.h1`
-  color: ${colors.lightGray};
-  font-size: 2.5rem;
-  margin-bottom: 3rem;
-  font-weight: 500;
+  padding: 2rem;
+  gap: 2rem;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 `;
 
 const Button = styled.button`
-  padding: 1rem 2.5rem;
+  padding: 1rem 2rem;
   font-size: 1.2rem;
   border-radius: 12px;
   border: none;
   cursor: pointer;
-  background-color: ${(props) =>
-    props.primary ? colors.lightGray : "#374151"};
-  color: ${(props) => (props.primary ? colors.darkBlue : colors.lightGray)};
+  background-color: ${colors.lightGray};
+  color: ${colors.darkBlue};
   font-weight: 500;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: 0.3s;
 
   &:hover {
-    background-color: ${(props) =>
-      props.primary ? "#E5E7EB" : colors.buttonHover};
-  }
-
-  &:active {
-    transform: scale(0.97);
+    background-color: #e5e7eb;
   }
 `;
 
-/* =================== Console =================== */
-
 const ConsoleContainer = styled.div`
-  position: fixed;
-  top: 60px; /* altura do Navbar */
-  right: 20px;
-  width: 40rem;
-  height: calc(100vh - 100px);
+  width: 50rem;
+  height: 70vh;
   background: #111;
   color: #0f0;
   display: flex;
   flex-direction: column;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
-  z-index: 1000;
   overflow: hidden;
+
+  @media (max-width: 1024px) {
+    width: 90%;
+    height: 50vh;
+  }
 `;
 
 const ConsoleHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  font-weight: bold;
+  padding: 0.5rem 1rem;
   border-bottom: 1px solid #333;
 `;
 
 const HeaderTitle = styled.div`
-  font-size: 1rem;
-`;
-
-const StopButton = styled.button`
-  background: #e74c3c;
-  border: none;
-  color: #fff;
   font-weight: bold;
-  padding: 0.4rem 0.8rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: 0.2s ease;
-
-  &:hover {
-    opacity: 0.9;
-  }
-`;
-
-const ConsoleBody = styled.div`
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 0.9rem;
-`;
-
-const LogLine = styled.div`
-  white-space: pre-wrap;
-  margin-bottom: 0.2rem;
-`;
-
-const HeaderButtons = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 `;
 
 const CloseButton = styled.button`
@@ -223,12 +162,21 @@ const CloseButton = styled.button`
   border: none;
   color: #fff;
   font-weight: bold;
-  padding: 0.4rem 0.8rem;
+  padding: 0.3rem 0.6rem;
   border-radius: 6px;
   cursor: pointer;
-  transition: 0.2s ease;
-
   &:hover {
     background: #777;
   }
+`;
+
+const ConsoleBody = styled.div`
+  flex: 1;
+  position: relative;
+`;
+
+const MatrixCanvas = styled.canvas`
+  width: 100%;
+  height: 100%;
+  display: block;
 `;

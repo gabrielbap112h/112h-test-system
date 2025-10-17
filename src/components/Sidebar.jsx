@@ -13,12 +13,12 @@ const Sidebar = ({ isOpen, onClose }) => {
       <Container isOpen={isOpen}>
         {/* Logo */}
         <Header>
-          <Logo src={Logo112H} alt="112H Logo" />
+          <Logo style={{cursor: "pointer"}} onClick={() => navigate("/")} src={Logo112H} alt="112H Logo" />
         </Header>
 
         {/* Menu principal */}
         <Menu>
-          <MenuItem active>
+          <MenuItem onClick={() => navigate("/")} active>
             <FaHome className="icon" />
             Home
           </MenuItem>
