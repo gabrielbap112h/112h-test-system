@@ -1,0 +1,40 @@
+{
+  "executado_em": "2025-10-20T21:14:16.042373Z",
+  "steps": [
+    {
+      "time": "2025-10-20T21:13:50.934196Z",
+      "step": "abrir_login",
+      "url_visitada": "http://localhost:3001/#/login",
+      "ok": true,
+      "message": "Acessou http://localhost:3001/#/login"
+    },
+    {
+      "time": "2025-10-20T21:14:03.506438Z",
+      "step": "login_com_email_errado",
+      "email_tentado": "gabriel.wrongemail.com",
+      "password_used": "(omitted)",
+      "current_url": "http://localhost:3001/#/login",
+      "fragment": "/login",
+      "navegou_para_root_fragment": false,
+      "ok": true,
+      "message": "✅ Login com email errado bloqueado corretamente."
+    },
+    {
+      "time": "2025-10-20T21:14:16.041370Z",
+      "step": "login_com_credenciais_corretas",
+      "email_tentado": "gabriel@email.com",
+      "password_used": "(omitted)",
+      "current_url": "http://localhost:3001/#/",
+      "fragment": "/",
+      "navegou_para_root_fragment": true,
+      "ok": true,
+      "message": "✅ Login correto redirecionou para '/'."
+    },
+    {
+      "time": "2025-10-20T21:14:16.041370Z",
+      "step": "final",
+      "ok": true,
+      "message": "🏁 Teste finalizado. Veja passos anteriores para detalhes."
+    }
+  ]
+}

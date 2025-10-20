@@ -12,13 +12,50 @@ const matrixChars = "高貴な精神は最も小さな人をも高める";
 export default function TesteUnitario() {
   const [showConsole, setShowConsole] = useState(false);
   const [matrixMode, setMatrixMode] = useState(false);
+  const [logs, setLogs] = useState([]);
+  const [executadoEm, setExecutadoEm] = useState("");
+  const [loading, setLoading] = useState(false); // ✅ controla o estado de carregamento
   const canvasRef = useRef();
   const animationRef = useRef();
 
   // Iniciar o console
-  const openConsole = (ctrl) => {
+  const openConsole = async (ctrl) => {
     setShowConsole(true);
-    setMatrixMode(ctrl); // Ctrl+click ativa Matrix
+    setMatrixMode(ctrl);
+    setLogs([]); // ✅ limpa logs antigos antes de carregar
+    setExecutadoEm("");
+    setLoading(true); // ✅ mostra "Carregando..."
+
+    if (!ctrl) {
+      try {
+        const res = await fetch("verificacoes_login.json?_=" + Date.now()); // força não usar cache
+        if (!res.ok) throw new Error("Arquivo JSON não encontrado");
+        const data = await res.json();
+        setLogs(data.steps || []);
+        setExecutadoEm(data.executado_em || "");
+      } catch (err) {
+        console.error("Erro ao ler JSON:", err);
+        setLogs([
+          {
+            step: "erro",
+            message:
+              "⚠️ Não foi possível ler verificacoes_login.json. Verifique se o Selenium gerou o arquivo.",
+            ok: false,
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setLoading(false);
+    }
+  };
+
+  // Formata data/hora para exibição local
+  const formatTime = (utcString) => {
+    if (!utcString) return "";
+    const date = new Date(utcString);
+    return date.toLocaleString("pt-BR", { hour12: false });
   };
 
   // Função Matrix
@@ -46,20 +83,17 @@ export default function TesteUnitario() {
         if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
-
         drops[i]++;
       }
+
       animationRef.current = requestAnimationFrame(draw);
     };
 
     draw();
   };
 
-  const stopMatrix = () => {
-    cancelAnimationFrame(animationRef.current);
-  };
+  const stopMatrix = () => cancelAnimationFrame(animationRef.current);
 
-  // Limpar animação ao fechar console
   useEffect(() => {
     if (showConsole && matrixMode) startMatrix();
     return () => stopMatrix();
@@ -76,7 +110,9 @@ export default function TesteUnitario() {
       {showConsole && (
         <ConsoleContainer>
           <ConsoleHeader>
-            <HeaderTitle>Console</HeaderTitle>
+            <HeaderTitle>
+              Console {executadoEm && <span>• Execução: {formatTime(executadoEm)}</span>}
+            </HeaderTitle>
             <CloseButton
               onClick={() => {
                 setShowConsole(false);
@@ -86,8 +122,37 @@ export default function TesteUnitario() {
               X
             </CloseButton>
           </ConsoleHeader>
+
           <ConsoleBody>
-            {matrixMode ? <MatrixCanvas ref={canvasRef} /> : <p>Logs aqui...</p>}
+            {matrixMode ? (
+              <MatrixCanvas ref={canvasRef} />
+            ) : loading ? (
+              <LoadingText>⏳ Carregando logs...</LoadingText>
+            ) : (
+              <LogContainer>
+                {logs.length === 0 ? (
+                  <p>Nenhum log encontrado.</p>
+                ) : (
+                  logs.map((log, i) => (
+                    <LogLine key={i} ok={log.ok}>
+                      <strong>[{formatTime(log.time)}]</strong> {log.step}: {log.message}
+                      {log.url_visitada && (
+                        <>
+                          <br />
+                          <span className="url">→ {log.url_visitada}</span>
+                        </>
+                      )}
+                      {log.current_url && (
+                        <>
+                          <br />
+                          <span className="url">→ {log.current_url}</span>
+                        </>
+                      )}
+                    </LogLine>
+                  ))
+                )}
+              </LogContainer>
+            )}
           </ConsoleBody>
         </ConsoleContainer>
       )}
@@ -101,16 +166,15 @@ const Container = styled.div`
   height: 100vh;
   background-color: ${colors.darkBlue};
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 2rem;
-  gap: 2rem;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  padding-right: 2rem;
 `;
 
 const Button = styled.button`
@@ -151,6 +215,13 @@ const ConsoleHeader = styled.div`
   align-items: center;
   padding: 0.5rem 1rem;
   border-bottom: 1px solid #333;
+  font-family: monospace;
+
+  span {
+    color: #888;
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+  }
 `;
 
 const HeaderTitle = styled.div`
@@ -179,4 +250,30 @@ const MatrixCanvas = styled.canvas`
   width: 100%;
   height: 100%;
   display: block;
+`;
+
+const LogContainer = styled.div`
+  padding: 1rem;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+`;
+
+const LogLine = styled.div`
+  color: ${(p) => (p.ok ? "#0f0" : "#f55")};
+  margin-bottom: 0.7rem;
+
+  .url {
+    color: #888;
+    font-size: 0.8rem;
+  }
+`;
+
+const LoadingText = styled.div`
+  padding: 2rem;
+  text-align: center;
+  font-family: monospace;
+  color: #0f0;
+  font-size: 1rem;
 `;
